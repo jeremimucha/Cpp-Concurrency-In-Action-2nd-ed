@@ -11,6 +11,13 @@
  * on a particular system. This information might be unavailable in which case zero is returned.
  */
 
+void yield_sleep(std::chrono::microseconds us)
+{
+    auto const timeout = std::chrono::high_resolution_clock::now() + us;
+    do {
+        std::this_thread::yield();
+    } while(std::chrono::high_resolution_clock::now() < timeout);
+}
 
 int main()
 {
@@ -31,9 +38,11 @@ int main()
                         }
                     };
                 });
-    while (count) {
-        std::this_thread::sleep_for(std::chrono::milliseconds{5});
-    }
+    auto const start = std::chrono::high_resolution_clock::now();
+    yield_sleep(std::chrono::microseconds{10});
+    auto const elapsed = std::chrono::high_resolution_clock::now() - start;
+    std::cout << "waited for " 
+        << std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count() << " us\n";
     std::lock_guard lk{cerr_mutex};
     std::cerr << "hardware concurrency = " << thread_count << "\n";
 }
