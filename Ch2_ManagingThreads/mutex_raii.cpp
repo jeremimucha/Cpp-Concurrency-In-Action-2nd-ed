@@ -14,10 +14,14 @@
 int main()
 {
     std::mutex m;
+
+// C++11/14
     auto t1 = std::thread{[&m]{
         std::lock_guard<std::mutex> lock{m};
         std::cerr << "Hello from pre-C++17!\n";
     }};
+
+// C++17
     auto t2 = std::thread{[&m]{
         std::scoped_lock lock{m};
         std::cerr << "Hello from C++17!\n";
