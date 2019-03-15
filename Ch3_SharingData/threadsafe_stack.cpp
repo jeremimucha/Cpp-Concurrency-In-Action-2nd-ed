@@ -2,13 +2,15 @@
 #include <iostream>
 #include <string>
 #include <type_traits>
-#include "threadsafe_stack.hpp"
 #include <random>
 #include <chrono>
 #include <utility>
 
+#include "threadsafe_stack.hpp"
+
+
 template<typename Stack, template<typename> class ReadPolicy, template<typename> class Handler>
-class Reader : private ReadPolicy<Stack>, private Handler<Stack> {
+class Reader {
     using ReadPolicy = typename ReadPolicy<Stack>;
     using Handler = typename Handler<Stack>;
 
@@ -75,6 +77,9 @@ public:
     static inline void process(pointer p_value)
     {
         std::cerr << __PRETTY_FUNCTION__ << "\n";
+        if (!p_value) {
+            throw std::runtime_error{"got nullptr value"};
+        }
         process(*p_value);
     }
 };
@@ -101,22 +106,90 @@ private:
     static constexpr inline char* const msg_{"Message #"};
 };
 
-template<typename Engine = std::default_random_engine,
+
+template<typename LoopPolicy,
+         typename Engine = std::default_random_engine,
          typename Distribution = std::uniform_int_distribution<>>
-class RandomDispatcher {
+class PeriodicAction {
 public:
     using random_engine_type = Engine;
     using distribution_type = Distribution;
     using result_type = typename distribution_type::result_type;
 
+    PeriodicAction(result_type min, result_type max)
+        : distribution_{min, max}
+    {
+    }
+
+    template<typename Action, typename... Args>
+    void operator()(Action&& action, Args&&... args)
+    {
+        while (LoopPolicy condition{std::forward<Args>(args)...}; condition) {
+            action();
+        }
+    }
+
+private:
+    distribution_type distribution_{};
+    static inline random_engine_type re_{
+        std::chrono::steady_clock::now().time_since_epoch().count()
+    };
+};
+
+template<typename Atomic, unsigned N>
+class BoundedLoopPolicy {
+public:
+    explicit BoundedLoopPolicy(Atomic& flag)
+        : active_flag_{++flag}
+    {
+    }
+
+    explicit operator bool() noexcept
+    {
+        if (++counter_ != N) {
+            return true;
+        }
+        return false;
+    }
+
+    ~BoundedLoopPolicy() noexcept
+    {
+        --active_flag_;
+    }
+private:
+    unsigned counter_{};
+    Atomic& active_flag_;
+};
+
+template<typename Atomic, typename Stack>
+class UntilEmptyLoopPolicy {
+public:
+    explicit UntilEmptyLoopPolicy(Atomic& flag, Stack const& stack)
+        : stack_{stack}, active_flag_{flag}
+    {
+    }
+
+    explicit operator bool() const noexcept
+    {
+        return active_flag_ != 0 && stack_.empty();
+    }
+
+private:
+    Stack const& stack_;
+    Atomic& active_flag_;
+};
+
+// class that manages the atomic variable
+// for synchronization. It should dispatch the call on thread creation by passing
+// the atomic to the callable object. The callable should handle the atomic appropriately
+// - increment it on entry and decrement it on exit - if it's a Writer,
+// and spin on it if it's a reader
+class Dispatcher {
+public:
     template<typename F>
     void operator()(F&& f)
     {
-        // TODO: There should be yet another class that manages the atomic variable
-        // for synchronization. It should dispatch the call on thread creation by passing
-        // the atomic to the callable object. The callable should handle the atomic appropriately
-        // - increment it on entry and decrement it on exit - if it's a Writer,
-        // and spin on it if it's a reader
+        std::forward<F>(f)(active_writers_);
     }
 
 private:
