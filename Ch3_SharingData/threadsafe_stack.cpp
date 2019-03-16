@@ -126,6 +126,7 @@ public:
     {
         while (LoopPolicy condition{std::forward<Args>(args)...}; condition) {
             action();
+            std::this_thread::sleep_for{std::chrono::milliseconds{distribution_(re_)}};
         }
     }
 
