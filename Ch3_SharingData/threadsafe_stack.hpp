@@ -22,6 +22,8 @@ struct empty_stack : public std::exception {
 template<typename T>
 class threadsafe_stack {
 public:
+    using value_type = typename std::stack<T>::value_type;
+
     threadsafe_stack() = default;
 
     threadsafe_stack(threadsafe_stack const& other)
@@ -40,16 +42,16 @@ public:
 
     ~threadsafe_stack() noexcept = default;
 
-    void push(T new_value) noexcept(std::is_nothrow_move_constructible_v<T>);
+    void push(T new_value) noexcept(std::is_nothrow_move_constructible_v<T>)
     {
         std::lock_guard<std::mutex> lock{m_};
-        data.push(std::move(new_value));
+        data_.push(std::move(new_value));
     }
 
     std::shared_ptr<T> pop()
     {
         std::lock_guard<std::mutex> lock{m_};
-        if (empty()) {
+        if (data_.empty()) {
             throw empty_stack{};
         }
         auto const res{std::make_shared<T>(data_.top())};
@@ -60,10 +62,11 @@ public:
     void pop(T& value)
     {
         std::lock_guard<std::mutex> lock{m_};
-        if (empty()) {
+        if (data_.empty()) {
             throw empty_stack{};
         }
         value = std::move(data_).top();
+        // value = data_.top();
         data_.pop();
     }
 

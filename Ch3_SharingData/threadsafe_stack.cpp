@@ -1,18 +1,21 @@
 #include <atomic>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <type_traits>
 #include <random>
 #include <chrono>
 #include <utility>
+#include <thread>
+#include <type_traits>
 
 #include "threadsafe_stack.hpp"
 
 
 template<typename Stack, template<typename> class ReadPolicy, template<typename> class Handler>
 class Reader {
-    using ReadPolicy = typename ReadPolicy<Stack>;
-    using Handler = typename Handler<Stack>;
+    using read_policy = ReadPolicy<Stack>;
+    using handler_policy = Handler<Stack>;
 
 public:
     explicit Reader(Stack& stack) noexcept
@@ -22,8 +25,8 @@ public:
 
     void operator()()
     {
-        auto&& value = ReadPolicy::read(stack_);
-        Handler::process(std::forward<decltype(value)>(value));
+        auto value = read_policy::read(stack_);
+        handler_policy::process(value);
     }
 
 private:
@@ -61,22 +64,23 @@ public:
 // and another overload taking the shared_ptr - potentially just delegating the actual work
 // to the by-ref overload
 template<typename Stack>
-class Handler {
+class ReportingHandler {
 public:
     using reference = std::add_lvalue_reference_t<
                             std::add_const_t<
-                                typename Stack::value_type>>
+                                typename Stack::value_type>>;
     using pointer = decltype(std::declval<Stack>().pop());
 
+    // requires operator<<(std::ostream&, reference)
     static inline void process(reference value)
     {
-        std::cerr << __PRETTY_FUNCTION__ << "\n"
+        std::cerr << "ReportingHandler [" << std::this_thread::get_id() << "]: "
             << value << "\n";
     }
 
     static inline void process(pointer p_value)
     {
-        std::cerr << __PRETTY_FUNCTION__ << "\n";
+        std::cerr << __FUNCTION__ << ": ";
         if (!p_value) {
             throw std::runtime_error{"got nullptr value"};
         }
@@ -84,6 +88,8 @@ public:
     }
 };
 
+// Note - not very generic. Maybe it doesn't need to be, given other components?
+// This would be just a concrete implementation of a writer for a concrete threadsafe_stack
 template<typename Stack>
 class Writer {
 public:
@@ -97,17 +103,20 @@ public:
         std::ostringstream oss;
         oss << msg_ << std::to_string(++counter_) << " from Thread["
             << std::this_thread::get_id() << "]";
-        stack_.push(std::move(oss).str());
+        stack_.push(oss.str());
+        std::cerr << "Pushed message: " << std::move(oss).str() << "\n";
     }
 
 private:
     Stack& stack_;
     int counter_{};
-    static constexpr inline char* const msg_{"Message #"};
+    static inline constexpr char const* const msg_{"Message #"};
 };
 
+template<typename Stack>
+Writer(Stack& stack) -> Writer<Stack>;
 
-template<typename LoopPolicy,
+template<typename Action,
          typename Engine = std::default_random_engine,
          typename Distribution = std::uniform_int_distribution<>>
 class PeriodicAction {
@@ -116,33 +125,33 @@ public:
     using distribution_type = Distribution;
     using result_type = typename distribution_type::result_type;
 
-    PeriodicAction(result_type min, result_type max)
-        : distribution_{min, max}
+    PeriodicAction(Action action, result_type min, result_type max)
+        : action_{std::move(action)}, distribution_{min, max}
     {
     }
 
-    template<typename Action, typename... Args>
-    void operator()(Action&& action, Args&&... args)
+    void operator()()
     {
-        while (LoopPolicy condition{std::forward<Args>(args)...}; condition) {
-            action();
-            std::this_thread::sleep_for{std::chrono::milliseconds{distribution_(re_)}};
-        }
+        action_();
+        std::this_thread::sleep_for(std::chrono::milliseconds{distribution_(engine_)});
     }
 
 private:
+    Action action_;
     distribution_type distribution_{};
-    static inline random_engine_type re_{
-        std::chrono::steady_clock::now().time_since_epoch().count()
+    static inline random_engine_type engine_{
+        static_cast<unsigned>(std::chrono::steady_clock::now().time_since_epoch().count())
     };
 };
 
-template<typename Atomic, unsigned N>
+template<unsigned N, typename Atomic>
 class BoundedLoopPolicy {
 public:
     explicit BoundedLoopPolicy(Atomic& flag)
-        : active_flag_{++flag}
+        : active_flag_{flag}
     {
+        ++active_flag_;
+        std::cerr << "BoundedLoopPolicy ctor, flag = " << active_flag_.load() << "\n";
     }
 
     explicit operator bool() noexcept
@@ -156,13 +165,14 @@ public:
     ~BoundedLoopPolicy() noexcept
     {
         --active_flag_;
+        std::cerr << "BoundedLoopPolicy dtor, flag = " << active_flag_.load() << "\n";
     }
 private:
     unsigned counter_{};
     Atomic& active_flag_;
 };
 
-template<typename Atomic, typename Stack>
+template<typename Stack, typename Atomic>
 class UntilEmptyLoopPolicy {
 public:
     explicit UntilEmptyLoopPolicy(Atomic& flag, Stack const& stack)
@@ -172,7 +182,7 @@ public:
 
     explicit operator bool() const noexcept
     {
-        return active_flag_ != 0 && stack_.empty();
+        return active_flag_.load() != 0 || !stack_.empty();
     }
 
 private:
@@ -185,19 +195,75 @@ private:
 // the atomic to the callable object. The callable should handle the atomic appropriately
 // - increment it on entry and decrement it on exit - if it's a Writer,
 // and spin on it if it's a reader
+// using atomic_type = std::atomic_int;
+template<typename DispatchPolicy>
 class Dispatcher {
 public:
-    template<typename F>
-    void operator()(F&& f)
+    using atomic_type = std::atomic_int;
+
+    template<typename... Args
+            ,typename = std::enable_if_t<
+                            std::is_constructible_v<
+                                DispatchPolicy,
+                                std::add_lvalue_reference_t<atomic_type>,
+                                Args...>>>
+    explicit Dispatcher(std::atomic_int& active_writers, Args&&... args)
+        : dispatch_condition_{active_writers, std::forward<Args>(args)...}
     {
-        std::forward<F>(f)(active_writers_);
+        std::cerr << "Dispatcher ctor\n";
+    }
+
+    template<typename Action>
+    void operator()(Action&& action)
+    {
+        while (dispatch_condition_) {
+            std::forward<Action>(action)();
+        }
     }
 
 private:
-    static inline std::atomic_int_fast8_t active_writers_{};
+    DispatchPolicy dispatch_condition_;
 };
+
+
+template<typename Stack, template<typename> class ReadPolicy>
+using ReportingReader = Reader<Stack, ReadPolicy, ReportingHandler>;
 
 int main()
 {
+    using StackType = threadsafe_stack<std::string>;
+    using StackWriter = Writer<StackType>;
+    using StackRefReader = ReportingReader<StackType, ReadByRef>;
+    using StackPtrReader = ReportingReader<StackType, ReadSharedPtr>;
 
+    StackType stack{};
+
+    std::atomic_int writer_threads_{0};
+    std::cerr << "0) active writer threads = " << writer_threads_.load();
+
+// Writer is wrapped in a lambda here, because it seems like std::thread copy constructs the
+// target thread object at least three times, at the same time - the dtor is called more often
+// than the ctor, leading to a negative atomic flag value
+    auto writer1 = std::thread{
+            [&writer_threads_](auto&& arg){
+                Dispatcher<BoundedLoopPolicy<10, std::atomic_int>> dispatcher{writer_threads_};
+                dispatcher(std::forward<decltype(arg)>(arg));
+            },
+            PeriodicAction<StackWriter>{StackWriter{stack}, 200, 456}
+        };
+    // auto writer2 = std::thread{
+    //         Dispatcher<BoundedLoopPolicy<10, std::atomic_int>>{writer_threads_},
+    //         PeriodicAction<StackWriter>{StackWriter{stack}, 100, 897}
+    //     };
+    auto reader1 = std::thread{
+            Dispatcher<UntilEmptyLoopPolicy<StackType, std::atomic_int>>{writer_threads_, stack},
+            PeriodicAction<StackRefReader>{StackRefReader{stack}, 234, 888}
+        };
+    // auto reader2 = std::thread{
+    //         Dispatcher<UntilEmptyLoopPolicy<StackType, std::atomic_int>>{writer_threads_, stack},
+    //         PeriodicAction<StackPtrReader>{StackPtrReader{stack}, 123, 987}
+    //     };
+    writer1.join();
+    reader1.join();
+    // reader2.join();
 }
