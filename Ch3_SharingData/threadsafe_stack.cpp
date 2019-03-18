@@ -243,27 +243,39 @@ int main()
 
 // Writer is wrapped in a lambda here, because it seems like std::thread copy constructs the
 // target thread object at least three times, at the same time - the dtor is called more often
-// than the ctor, leading to a negative atomic flag value
+// than the ctor, leading to a negative atomic flag value.
+// Alternatively - BoundedLoopPolicy should implement proper copy controll.
+    auto const writer_task = [&writer_threads_](auto&& arg){
+            Dispatcher<BoundedLoopPolicy<10, std::atomic_int>> dispatcher{writer_threads_};
+            dispatcher(std::forward<decltype(arg)>(arg));
+        };
     auto writer1 = std::thread{
-            [&writer_threads_](auto&& arg){
-                Dispatcher<BoundedLoopPolicy<10, std::atomic_int>> dispatcher{writer_threads_};
-                dispatcher(std::forward<decltype(arg)>(arg));
-            },
+            writer_task,
             PeriodicAction<StackWriter>{StackWriter{stack}, 200, 456}
         };
-    // auto writer2 = std::thread{
-    //         Dispatcher<BoundedLoopPolicy<10, std::atomic_int>>{writer_threads_},
-    //         PeriodicAction<StackWriter>{StackWriter{stack}, 100, 897}
-    //     };
+    auto writer2 = std::thread{
+            writer_task,
+            PeriodicAction<StackWriter>{StackWriter{stack}, 100, 897}
+        };
+    
+// No need to wrap reader in a lambda - nothing is done in the ctor/dtor
+    Dispatcher<UntilEmptyLoopPolicy<StackType, std::atomic_int>> reader_task{writer_threads_, stack};
     auto reader1 = std::thread{
-            Dispatcher<UntilEmptyLoopPolicy<StackType, std::atomic_int>>{writer_threads_, stack},
+            reader_task,
             PeriodicAction<StackRefReader>{StackRefReader{stack}, 234, 888}
         };
-    // auto reader2 = std::thread{
-    //         Dispatcher<UntilEmptyLoopPolicy<StackType, std::atomic_int>>{writer_threads_, stack},
-    //         PeriodicAction<StackPtrReader>{StackPtrReader{stack}, 123, 987}
-    //     };
+    auto reader2 = std::thread{
+            reader_task,
+            PeriodicAction<StackPtrReader>{StackPtrReader{stack}, 123, 987}
+        };
+
+// Proper synchronization on thread-start is missing - as is one of the reader threads
+// could start reading before anything is written to the stack - causing an exception to be thrown
+// (due to this particular stack implementation) - this could be avoided by using a different
+// stack (implementing a waiting pop operation or a try-an-pop) or by forcing the reader threads
+// to start after the writer threads start writing
     writer1.join();
+    writer2.join();
     reader1.join();
-    // reader2.join();
+    reader2.join();
 }
