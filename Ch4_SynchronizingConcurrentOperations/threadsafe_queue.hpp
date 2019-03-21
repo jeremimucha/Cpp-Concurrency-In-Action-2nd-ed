@@ -90,6 +90,7 @@ public:
 
     std::shared_ptr<T> try_pop()
     {
+        std::lock_guard<std::mutex> lock{mtx_};
         if (data_.empty()) {
             return {nullptr};
         }
