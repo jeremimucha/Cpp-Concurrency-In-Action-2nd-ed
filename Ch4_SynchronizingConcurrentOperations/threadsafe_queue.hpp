@@ -56,7 +56,7 @@ public:
     void push(T value)
     {
         std::lock_guard<std::mutex> lock{mtx_};
-        data_.push_back(std::move(value));
+        data_.push(std::move(value));
         data_cond_.notify_one();
     }
 

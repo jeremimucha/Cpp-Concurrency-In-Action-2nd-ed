@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <thread>
 #include <mutex>
 #include <future>
@@ -26,14 +27,14 @@ public:
     
         for (auto i{0}; i!=10; ++i) {
             std::this_thread::sleep_for(std::chrono::milliseconds{sleep});
-            std::ostringstream oss{"Task #"};
-            oss << i << " from thread[" << std::this_thread::get_id() << "]";
+            std::ostringstream oss{};
+            oss << "Task #" << i << " from thread[" << std::this_thread::get_id() << "]";
             auto task = [&out_mutex=SynchPolicy::output_mutex(), msg{std::move(oss).str()}]{
                 // cout synchronization not needed if only one sender
                 using mutex_type = std::decay_t<decltype(out_mutex)>;
                 std::lock_guard<mutex_type> lock{out_mutex};
                 std::cerr << msg << "\n";
-            }
+                };
             // synchronization handled by the threadsafe queue
             queue_.push(std::packaged_task<void()>{std::move(task)});
         }
@@ -63,10 +64,16 @@ public:
         while (SynchPolicy::start_flag() == false) {
             std::this_thread::yield();
         }
-        while (!SynchPolicy::work_done()) {
+        while (true) {
             std::packaged_task<void()> task{};
             if (queue_.try_pop(task)) {
                 task();
+            }
+            else if (SynchPolicy::work_done()) {
+                if (queue_.try_pop(task)) {
+                    task();
+                }
+                break;
             }
         };
     }
@@ -144,8 +151,8 @@ int main()
     using MessageSender = TaskSender<TaskQueue, UntilAllSendersLive>;
     using MessageProcessor = TaskProcessor<TaskQueue,  UntilAllSendersLive>;
 
-    auto message_sender1 = std::thread{MessageSender{task_queue}, 123};
-    auto message_sender2 = std::thread{MessageSender{task_queue}, 203};
+    auto message_sender1 = std::thread{MessageSender{task_queue}, 11};
+    auto message_sender2 = std::thread{MessageSender{task_queue}, 11};
     auto message_processor = std::thread{MessageProcessor{task_queue}};
 
     message_sender1.join();
