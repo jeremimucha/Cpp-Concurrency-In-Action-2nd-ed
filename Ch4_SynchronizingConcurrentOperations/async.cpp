@@ -12,7 +12,9 @@
 
 namespace
 {
-std::default_random_engine re{std::chrono::system_clock::now().time_since_epoch().count()};
+std::default_random_engine re{
+    static_cast<unsigned>(std::chrono::system_clock::now().time_since_epoch().count())
+};
 std::uniform_int_distribution<> ud(300,700);
 }
 

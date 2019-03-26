@@ -67,4 +67,5 @@ int main()
     std::cerr << "Pre-sort data: " << data << "\n";
     auto const sorted{parallel_quicksort(data)};
     std::cerr << "sorted data: " << sorted << "\n";
+
 }
