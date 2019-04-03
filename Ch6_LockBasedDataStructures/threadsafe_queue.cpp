@@ -50,7 +50,7 @@ private:
     TaskQueue& queue_;
 };
 
-template<typename TaskQueue, typename SynchPolicy, /* typename PopPolicy */>
+template<typename TaskQueue, typename SynchPolicy /*, typename PopPolicy */>
 class TaskProcessor
 {
 public:
