@@ -1,11 +1,11 @@
 #pragma once
 
-#include <queue>
-#include <mutex>
 #include <condition_variable>
-#include <utility>
 #include <memory>
+#include <mutex>
+#include <queue>
 #include <type_traits>
+#include <utility>
 
 /**
  * An alternative implementation of a single-mutex threadsafe queue.
@@ -13,10 +13,9 @@
  * protected by the mutex - thus increasing opportunity for concurrency.
  */
 
-template<typename T>
-class threadsafe_queue
-{
-public:
+template <typename T>
+class threadsafe_queue {
+  public:
     using value_type = std::shared_ptr<T>;
     threadsafe_queue() = default;
 
@@ -68,7 +67,7 @@ public:
         cv_.notify_one();
     }
 
-    template<typename... Args>
+    template <typename... Args>
     std::enable_if_t<std::is_constructible_v<T, Args...>>
     emplace(Args&&... args)
     {
@@ -81,7 +80,7 @@ public:
     void wait_and_pop(T& value)
     {
         std::unique_lock<std::mutex> lock{mtx_};
-        cv_.wait(lock, [this]{return !queue_.empty();});
+        cv_.wait(lock, [this] { return !queue_.empty(); });
         auto pvalue = std::move(queue_.front());
         queue_.pop();
         lock.unlock();
@@ -91,7 +90,7 @@ public:
     std::shared_ptr<T> wait_and_pop()
     {
         std::unique_lock<std::mutex> lock{mtx_};
-        cv_.wait(lock, [this]{ return !queue_.empty(); });
+        cv_.wait(lock, [this] { return !queue_.empty(); });
         auto const res{std::move(queue_.front())};
         queue_.pop();
         return res;
@@ -127,7 +126,7 @@ public:
         return queue_.empty();
     }
 
-private:
+  private:
     mutable std::mutex mtx_{};
     std::queue<value_type> queue_{};
     std::condition_variable cv_{};
