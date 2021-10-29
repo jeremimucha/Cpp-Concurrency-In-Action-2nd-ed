@@ -25,7 +25,7 @@ int main()
     auto const thread_count = std::thread::hardware_concurrency();
     std::vector<joining_thread> threads{};
     std::mutex cerr_mutex;
-    std::atomic_int count{thread_count != 0 ? thread_count : 2};
+    std::atomic_int count{static_cast<int>(thread_count != 0 ? thread_count : 2)};
     std::generate_n(std::back_inserter(threads),
                 count.load(),
                 [&mtx=cerr_mutex, &count=count]{

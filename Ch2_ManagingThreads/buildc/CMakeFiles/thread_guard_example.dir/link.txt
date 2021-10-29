@@ -1,0 +1,1 @@
+/usr/bin/clang++ -O2 -g -DNDEBUG -rdynamic CMakeFiles/thread_guard_example.dir/thread_guard_example.cpp.o -o thread_guard_example  -lpthread 

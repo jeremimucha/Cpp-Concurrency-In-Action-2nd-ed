@@ -2,7 +2,6 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
-
 // std::atomic_flag is the simplest atomic type. It's guaranteed to be lock-free, but provides
 // a very simple set of operations - `clear()` and `test_and_set()`.
 // `clear()` is a store-type operation and can be
@@ -22,12 +21,17 @@ public:
 
     void lock()
     {
+        // Spin on the mutex until the loaded value is false,
+        // indicating that some other thread cleared the value,
+        // (or that it was clear to begin with - after initialization)
+        // and the current thread managed to set the value to true.
         while (flag_.test_and_set(std::memory_order_acquire))
             ;
     }
 
     void unlock()
     {
+        // Unlocking is simply clearing the flag.
         flag_.clear(std::memory_order_release);
     }
 

@@ -1,0 +1,1 @@
+/usr/bin/clang++ -O2 -g -DNDEBUG -rdynamic CMakeFiles/scoped_thread_example.dir/scoped_thread_example.cpp.o -o scoped_thread_example  -lpthread 

@@ -9,7 +9,7 @@ void test_concurrent_push_and_pop_on_empty_queue()
 {
     threadsafe_queue<int> q;
     std::promise<void> go, push_ready, pop_ready;
-    std::shared_future ready{go.get_future()};
+    std::shared_future<void> ready{go.get_future()};
     std::future<void> push_done;
     std::future<int> pop_done;
     try {

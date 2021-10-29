@@ -53,14 +53,14 @@ public:
 
     void report_data()
     {
-        std::call_once(init_flag_, &init_resource, this);
+        std::call_once(init_flag_, &LazyClass::init_resource, this);
         std::cerr << "LazyClass thread[" << std::this_thread::get_id()
             << "] data = " << resource_->str() << "\n";
     }
 
     void update_data()
     {
-        std::call_once(init_flag_, &init_resource, this);
+        std::call_once(init_flag_, &LazyClass::init_resource, this);
         auto const id = std::this_thread::get_id();
         std::cerr << "LazyClass thread[" << id << "] updating data...\n";
         *resource_ << ", " << id;

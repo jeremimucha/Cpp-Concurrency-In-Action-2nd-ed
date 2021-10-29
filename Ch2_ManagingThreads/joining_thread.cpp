@@ -28,7 +28,7 @@ private:
     Action action_;
     std::uniform_int_distribution<> ud_{};
     static inline std::default_random_engine re_{
-        std::chrono::system_clock::now().time_since_epoch().count()
+        static_cast<unsigned long>(std::chrono::system_clock::now().time_since_epoch().count())
     };
 };
 
@@ -37,7 +37,7 @@ int main()
 {
     std::vector<joining_thread> threads{};
 
-    for(auto i{0u}; i != 5; ++i) {
+    for(auto i{0}; i != 5; ++i) {
         threads.emplace_back(periodic_action{[]{
             std::cerr << "Hello from thread[" << std::this_thread::get_id() << "]\n";
         }, (i+1) * 42, (10-i) * 42});

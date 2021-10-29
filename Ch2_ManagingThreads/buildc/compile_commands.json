@@ -1,0 +1,32 @@
+[
+{
+  "directory": "/home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/buildc",
+  "command": "/usr/bin/clang++   -O2 -g -DNDEBUG -std=gnu++20 -o CMakeFiles/thread_guard_example.dir/thread_guard_example.cpp.o -c /home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/thread_guard_example.cpp",
+  "file": "/home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/thread_guard_example.cpp"
+},
+{
+  "directory": "/home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/buildc",
+  "command": "/usr/bin/clang++   -O2 -g -DNDEBUG -std=gnu++20 -o CMakeFiles/scoped_thread_example.dir/scoped_thread_example.cpp.o -c /home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/scoped_thread_example.cpp",
+  "file": "/home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/scoped_thread_example.cpp"
+},
+{
+  "directory": "/home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/buildc",
+  "command": "/usr/bin/clang++   -O2 -g -DNDEBUG -std=gnu++20 -o CMakeFiles/hardware_concurrency.dir/hardware_concurrency.cpp.o -c /home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/hardware_concurrency.cpp",
+  "file": "/home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/hardware_concurrency.cpp"
+},
+{
+  "directory": "/home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/buildc",
+  "command": "/usr/bin/clang++   -O2 -g -DNDEBUG -std=gnu++20 -o CMakeFiles/passing_arguments.dir/passing_arguments.cpp.o -c /home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/passing_arguments.cpp",
+  "file": "/home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/passing_arguments.cpp"
+},
+{
+  "directory": "/home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/buildc",
+  "command": "/usr/bin/clang++   -O2 -g -DNDEBUG -std=gnu++20 -o CMakeFiles/mutex_raii.dir/mutex_raii.cpp.o -c /home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/mutex_raii.cpp",
+  "file": "/home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/mutex_raii.cpp"
+},
+{
+  "directory": "/home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/buildc",
+  "command": "/usr/bin/clang++   -O2 -g -DNDEBUG -std=gnu++20 -o CMakeFiles/joining_thread.dir/joining_thread.cpp.o -c /home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/joining_thread.cpp",
+  "file": "/home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/joining_thread.cpp"
+}
+]

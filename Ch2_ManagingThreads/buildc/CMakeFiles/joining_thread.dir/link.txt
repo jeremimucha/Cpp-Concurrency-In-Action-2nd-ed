@@ -1,0 +1,1 @@
+/usr/bin/clang++ -O2 -g -DNDEBUG -rdynamic CMakeFiles/joining_thread.dir/joining_thread.cpp.o -o joining_thread  -lpthread 

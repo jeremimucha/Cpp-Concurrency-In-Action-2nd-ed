@@ -15,7 +15,7 @@ file( GLOB Sources RELATIVE "${PROJECT_SOURCE_DIR}"
 # Configure build
 ###############################################################################
 # Set required C++ standard
-set( CMAKE_CXX_STANDARD 17 )
+set( CMAKE_CXX_STANDARD 20 )
 set( CMAKE_CXX_STANDARD_REQUIRED TRUE )
 
 # Set build type
@@ -169,6 +169,7 @@ endif()
 ###############################################################################
 # Build target
 ###############################################################################
+find_package(Threads REQUIRED)
 foreach( target ${Sources} )
   string(REGEX MATCH "^[^ .]*" fname ${target} )
   MESSAGE( STATUS "Executable: ${fname}" )
@@ -180,6 +181,7 @@ foreach( target ${Sources} )
   # )
   target_link_libraries( ${fname}
     Project_config
+    Threads::Threads
     # ${Boost_LIBRARIES}
     )
 endforeach(target)

@@ -1,0 +1,1 @@
+/usr/bin/clang++ -O2 -g -DNDEBUG -rdynamic CMakeFiles/hardware_concurrency.dir/hardware_concurrency.cpp.o -o hardware_concurrency  -lpthread 

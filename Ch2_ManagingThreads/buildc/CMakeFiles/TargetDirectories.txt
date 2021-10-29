@@ -1,0 +1,8 @@
+/home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/buildc/CMakeFiles/rebuild_cache.dir
+/home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/buildc/CMakeFiles/edit_cache.dir
+/home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/buildc/CMakeFiles/thread_guard_example.dir
+/home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/buildc/CMakeFiles/scoped_thread_example.dir
+/home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/buildc/CMakeFiles/hardware_concurrency.dir
+/home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/buildc/CMakeFiles/passing_arguments.dir
+/home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/buildc/CMakeFiles/mutex_raii.dir
+/home/jam/projects/Cpp-Concurrency-In-Action-2nd-ed/Ch2_ManagingThreads/buildc/CMakeFiles/joining_thread.dir

@@ -15,7 +15,7 @@ file( GLOB Sources RELATIVE "${PROJECT_SOURCE_DIR}"
 # Configure build
 ###############################################################################
 # Set required C++ standard
-set( CMAKE_CXX_STANDARD 17 )
+set( CMAKE_CXX_STANDARD 20 )
 set( CMAKE_CXX_STANDARD_REQUIRED TRUE )
 
 # Set build type
